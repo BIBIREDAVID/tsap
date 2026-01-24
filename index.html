@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Repository System</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 48px;
+        }
+        .header p {
+            margin: 0;
+            font-size: 20px;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .search-box input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .faculty-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+        .faculty-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .faculty-card:hover {
+            transform: translateY(-5px);
+        }
+        .faculty-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+        }
+        .faculty-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .faculty-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .faculty-body {
+            padding: 25px;
+        }
+        .course {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .course h3 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            color: #333;
+        }
+        .course-info {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .file-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+        .file-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+        .file-name {
+            font-weight: 500;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .file-size {
+            color: #999;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+        .download-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .download-btn:hover {
+            background: #5568d3;
+        }
+        .download-all-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        .download-all-btn:hover {
+            background: #059669;
+        }
+        .drive-link {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .drive-link a {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .drive-link a:hover {
+            text-decoration: underline;
+        }
+        .no-materials {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+        .view-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        .toggle-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        .toggle-btn.inactive {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .toggle-btn:hover {
+            opacity: 0.8;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .modal-content h2 {
+            margin: 0 0 25px 0;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .login-btn {
+            width: 100%;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .login-btn:hover {
+            background: #5568d3;
+        }
+        .error-msg {
+            background: #fee;
+            color: #c00;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .error-msg.show {
+            display: block;
+        }
+        .demo-credentials {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .admin-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .admin-section h2 {
+            margin: 0 0 20px 0;
+            color: #333;
+        }
+        .add-form {
+            display: flex;
+            gap: 10px;
+        }
+        .add-form input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        .add-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .folder-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .folder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .folder-header h4 {
+            margin: 0;
+            color: #333;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin: 15px 0;
+        }
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .hide {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="view-toggle">
+        <button class="toggle-btn active" id="studentBtn">👥 Student View</button>
+        <button class="toggle-btn inactive" id="adminBtn">⚙️ Admin Panel</button>
+        <button class="toggle-btn inactive hide" id="logoutBtn">🚪 Logout</button>
+    </div>
+
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <h2>🔒 Admin Login</h2>
+            <div class="error-msg" id="errorMsg">Invalid email or password</div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="admin@faculty.edu" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+            <div class="demo-credentials">
+                <strong>Demo Credentials:</strong><br>
+                Email: admin@faculty.edu<br>
+                Password: admin123
+            </div>
+        </div>
+    </div>
+
+    <div id="appContent"></div>
+
+    <script>
+        var app = {
+            authenticated: false,
+            view: 'student',
+            searchQuery: '',
+            faculties: [
+                {
+                    id: 1,
+                    name: 'Computer Science',
+                    folders: [
+                        {
+                            id: 1,
+                            name: 'Data Structures',
+                            driveLink: 'https://drive.google.com/drive/folders/example1',
+                            materials: [
+                                { id: 1, name: 'Introduction to Data Structures.pdf', size: 1024000 },
+                                { id: 2, name: 'Arrays and Linked Lists.pdf', size: 2048000 }
+                            ]
+                        },
+                        {
+                            id: 2,
+                            name: 'Algorithms',
+                            driveLink: '',
+                            materials: [
+                                { id: 3, name: 'Sorting Algorithms.pdf', size: 1536000 }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: 'Engineering',
+                    folders: [
+                        { id: 3, name: 'Thermodynamics', driveLink: '', materials: [] },
+                        { id: 4, name: 'Mechanics', driveLink: '', materials: [] }
+                    ]
+                }
+            ]
+        };
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        function renderStudentView() {
+            var html = '<div class="header"><h1>Faculty Repository</h1><p>Access all your academic materials in one place</p></div>';
+            html += '<div class="container">';
+            html += '<div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Search for faculties, courses, or materials..." value="' + app.searchQuery + '"></div>';
+            html += '<div class="faculty-grid">';
+
+            app.faculties.forEach(function(faculty) {
+                html += '<div class="faculty-card">';
+                html += '<div class="faculty-header"><h2>📁 ' + faculty.name + '</h2><p>' + faculty.folders.length + ' courses available</p></div>';
+                html += '<div class="faculty-body">';
+
+                faculty.folders.forEach(function(folder) {
+                    html += '<div class="course">';
+                    html += '<h3>' + folder.name + '</h3>';
+                    html += '<div class="course-info">' + folder.materials.length + ' file(s)</div>';
+
+                    if (folder.materials.length > 0) {
+                        folder.materials.forEach(function(file) {
+                            html += '<div class="file-item">';
+                            html += '<div class="file-info">';
+                            html += '<div class="file-icon">📄</div>';
+                            html += '<div><div class="file-name">' + file.name + '</div><div class="file-size">' + formatSize(file.size) + '</div></div>';
+                            html += '</div>';
+                            html += '<button class="download-btn">⬇️ Download</button>';
+                            html += '</div>';
+                        });
+                        html += '<button class="download-all-btn">⬇️ Download All Files</button>';
+                    }
+
+                    if (folder.driveLink) {
+                        html += '<div class="drive-link"><a href="' + folder.driveLink + '" target="_blank">🔗 Open in Google Drive</a></div>';
+                    }
+
+                    if (folder.materials.length === 0 && !folder.driveLink) {
+                        html += '<div class="no-materials">No materials available yet</div>';
+                    }
+
+                    html += '</div>';
+                });
+
+                html += '</div></div>';
+            });
+
+            html += '</div></div>';
+            return html;
+        }
+
+        function renderAdminView() {
+            var html = '<div class="header"><h1>Admin Panel</h1><p>Manage faculty materials and resources</p></div>';
+            html += '<div class="container">';
+            html += '<div class="admin-section">';
+            html += '<h2>Add New Faculty</h2>';
+            html += '<div class="add-form">';
+            html += '<input type="text" id="newFacultyInput" placeholder="Faculty name (e.g., Computer Science)">';
+            html += '<button class="add-btn" onclick="addFaculty()">➕ Add Faculty</button>';
+            html += '</div></div>';
+
+            html += '<div class="faculty-grid">';
+            app.faculties.forEach(function(faculty) {
+                html += '<div class="faculty-card">';
+                html += '<div class="faculty-header">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                html += '<h2>📁 ' + faculty.name + '</h2>';
+                html += '<button class="delete-btn" onclick="deleteFaculty(' + faculty.id + ')">🗑️</button>';
+                html += '</div></div>';
+                html += '<div class="faculty-body">';
+
+                html += '<div class="add-form" style="margin-bottom:20px;">';
+                html += '<input type="text" id="newFolder' + faculty.id + '" placeholder="New folder name">';
+                html += '<button class="add-btn" onclick="addFolder(' + faculty.id + ')">➕</button>';
+                html += '</div>';
+
+                faculty.folders.forEach(function(folder) {
+                    html += '<div class="folder-section">';
+                    html += '<div class="folder-header">';
+                    html += '<h4>' + folder.name + '</h4>';
+                    html += '<button class="delete-btn" onclick="deleteFolder(' + faculty.id + ',' + folder.id + ')">🗑️</button>';
+                    html += '</div>';
+
+                    html += '<div style="margin:10px 0;">';
+                    html += '<label style="font-size:13px;color:#666;">Google Drive Link:</label>';
+                    html += '<input type="text" value="' + folder.driveLink + '" placeholder="https://drive.google.com/..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-top:5px;">';
+                    html += '</div>';
+
+                    html += '<label class="upload-area">';
+                    html += '<div style="font-size:32px;">📤</div>';
+                    html += '<div>Click to upload PDFs</div>';
+                    html += '<input type="file" accept=".pdf" multiple style="display:none;">';
+                    html += '</label>';
+
+                    if (folder.materials.length > 0) {
+                        html += '<div style="margin-top:15px;">';
+                        html += '<strong style="font-size:13px;">' + folder.materials.length + ' files</strong>';
+                        folder.materials.forEach(function(file) {
+                            html += '<div class="file-item" style="margin-top:8px;">';
+                            html += '<div class="file-info">';
+                            html += '<div class="file-icon">📄</div>';
+                            html += '<div class="file-name">' + file.name + '</div>';
+                            html += '</div></div>';
+                        });
+                        html += '</div>';
+                    }
+
+                    html += '</div>';
+                });
+
+                html += '</div></div>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        function render() {
+            var content = app.view === 'student' ? renderStudentView() : renderAdminView();
+            document.getElementById('appContent').innerHTML = content;
+
+            document.getElementById('studentBtn').className = app.view === 'student' ? 'toggle-btn active' : 'toggle-btn inactive';
+            document.getElementById('adminBtn').className = app.view === 'admin' ? 'toggle-btn active' : 'toggle-btn inactive';
+            document.getElementById('logoutBtn').className = app.authenticated ? 'toggle-btn inactive' : 'toggle-btn inactive hide';
+
+            if (app.view === 'student') {
+                var searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.oninput = function(e) {
+                        app.searchQuery = e.target.value;
+                        render();
+                    };
+                }
+            }
+        }
+
+        function addFaculty() {
+            var input = document.getElementById('newFacultyInput');
+            if (input && input.value.trim()) {
+                app.faculties.push({
+                    id: Date.now(),
+                    name: input.value.trim(),
+                    folders: []
+                });
+                render();
+            }
+        }
+
+        function deleteFaculty(id) {
+            if (confirm('Delete this faculty?')) {
+                app.faculties = app.faculties.filter(function(f) { return f.id !== id; });
+                render();
+            }
+        }
+
+        function addFolder(facultyId) {
+            var input = document.getElementById('newFolder' + facultyId);
+            if (input && input.value.trim()) {
+                for (var i = 0; i < app.faculties.length; i++) {
+                    if (app.faculties[i].id === facultyId) {
+                        app.faculties[i].folders.push({
+                            id: Date.now(),
+                            name: input.value.trim(),
+                            driveLink: '',
+                            materials: []
+                        });
+                        break;
+                    }
+                }
+                render();
+            }
+        }
+
+        function deleteFolder(facultyId, folderId) {
+            if (confirm('Delete this folder?')) {
+                for (var i = 0; i < app.faculties.length; i++) {
+                    if (app.faculties[i].id === facultyId) {
+                        app.faculties[i].folders = app.faculties[i].folders.filter(function(f) { return f.id !== folderId; });
+                        break;
+                    }
+                }
+                render();
+            }
+        }
+
+        document.getElementById('studentBtn').onclick = function() {
+            app.view = 'student';
+            render();
+        };
+
+        document.getElementById('adminBtn').onclick = function() {
+            if (!app.authenticated) {
+                document.getElementById('loginModal').classList.add('show');
+            } else {
+                app.view = 'admin';
+                render();
+            }
+        };
+
+        document.getElementById('logoutBtn').onclick = function() {
+            app.authenticated = false;
+            app.view = 'student';
+            render();
+        };
+
+        document.getElementById('loginForm').onsubmit = function(e) {
+            e.preventDefault();
+            var email = document.getElementById('email').value;
+            var password = document.getElementById('password').value;
+
+            if (email === 'admin@tsap.edu' && password === 'admin123') {
+                app.authenticated = true;
+                app.view = 'admin';
+                document.getElementById('loginModal').classList.remove('show');
+                document.getElementById('errorMsg').classList.remove('show');
+                render();
+            } else {
+                document.getElementById('errorMsg').classList.add('show');
+            }
+        };
+
+        render();
+    </script>
+</body>
+</html>
