@@ -403,34 +403,43 @@
             faculties: [
                 {
                     id: 1,
-                    name: 'Computer Science',
-                    folders: [
-                        {
-                            id: 1,
-                            name: 'Data Structures',
-                            driveLink: 'https://drive.google.com/drive/folders/example1',
-                            materials: [
-                                { id: 1, name: 'Introduction to Data Structures.pdf', size: 1024000 },
-                                { id: 2, name: 'Arrays and Linked Lists.pdf', size: 2048000 }
-                            ]
-                        },
-                        {
-                            id: 2,
-                            name: 'Algorithms',
-                            driveLink: '',
-                            materials: [
-                                { id: 3, name: 'Sorting Algorithms.pdf', size: 1536000 }
-                            ]
-                        }
-                    ]
+                    name: 'Faculty of Science',
+                    folders: []
                 },
                 {
                     id: 2,
-                    name: 'Engineering',
-                    folders: [
-                        { id: 3, name: 'Thermodynamics', driveLink: '', materials: [] },
-                        { id: 4, name: 'Mechanics', driveLink: '', materials: [] }
-                    ]
+                    name: 'Faculty of Social Science',
+                    folders: []
+                },
+                {
+                    id: 3,
+                    name: 'Faculty of Arts',
+                    folders: []
+                },
+                {
+                    id: 4,
+                    name: 'Faculty of Law',
+                    folders: []
+                },
+                {
+                    id: 5,
+                    name: 'Faculty of Management Science',
+                    folders: []
+                },
+                {
+                    id: 6,
+                    name: 'School of Transport',
+                    folders: []
+                },
+                {
+                    id: 7,
+                    name: 'Faculty of Communication and Media Studies',
+                    folders: []
+                },
+                {
+                    id: 8,
+                    name: 'School of Library, Archival and Information Science',
+                    folders: []
                 }
             ]
         };
@@ -464,10 +473,10 @@
                             html += '<div class="file-icon">📄</div>';
                             html += '<div><div class="file-name">' + file.name + '</div><div class="file-size">' + formatSize(file.size) + '</div></div>';
                             html += '</div>';
-                            html += '<button class="download-btn">⬇️ Download</button>';
+                            html += '<a href="' + (file.url || '#') + '" download="' + file.name + '" class="download-btn">⬇️ Download</a>';
                             html += '</div>';
                         });
-                        html += '<button class="download-all-btn">⬇️ Download All Files</button>';
+                        html += '<button class="download-all-btn" onclick="downloadAllFiles(' + faculty.id + ',' + folder.id + ')">⬇️ Download All Files</button>';
                     }
 
                     if (folder.driveLink) {
@@ -480,6 +489,10 @@
 
                     html += '</div>';
                 });
+
+                if (faculty.folders.length === 0) {
+                    html += '<div class="no-materials" style="padding:40px;">No courses available yet</div>';
+                }
 
                 html += '</div></div>';
             });
@@ -509,8 +522,19 @@
                 html += '<div class="faculty-body">';
 
                 html += '<div class="add-form" style="margin-bottom:20px;">';
-                html += '<input type="text" id="newFolder' + faculty.id + '" placeholder="New folder name">';
-                html += '<button class="add-btn" onclick="addFolder(' + faculty.id + ')">➕</button>';
+                html += '<input type="text" id="newFolder' + faculty.id + '" placeholder="New course/folder name">';
+                html += '<button class="add-btn" onclick="addFolder(' + faculty.id + ')">➕ Add Course</button>';
+                html += '</div>';
+                
+                html += '<div style="margin-bottom:20px;display:flex;gap:10px;">';
+                html += '<label style="flex:1;background:#667eea;color:white;padding:12px;border-radius:8px;text-align:center;cursor:pointer;font-weight:600;">';
+                html += '📁 Upload Folder';
+                html += '<input type="file" id="folderInput' + faculty.id + '" webkitdirectory directory multiple onchange="uploadFolder(' + faculty.id + ',this)" style="display:none;">';
+                html += '</label>';
+                html += '<label style="flex:1;background:#10b981;color:white;padding:12px;border-radius:8px;text-align:center;cursor:pointer;font-weight:600;">';
+                html += '📄 Upload Files';
+                html += '<input type="file" id="filesInput' + faculty.id + '" accept=".pdf" multiple onchange="uploadFiles(' + faculty.id + ',this)" style="display:none;">';
+                html += '</label>';
                 html += '</div>';
 
                 faculty.folders.forEach(function(folder) {
@@ -521,31 +545,39 @@
                     html += '</div>';
 
                     html += '<div style="margin:10px 0;">';
-                    html += '<label style="font-size:13px;color:#666;">Google Drive Link:</label>';
-                    html += '<input type="text" value="' + folder.driveLink + '" placeholder="https://drive.google.com/..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-top:5px;">';
+                    html += '<label style="font-size:13px;color:#666;font-weight:600;display:block;margin-bottom:5px;">Google Drive Link:</label>';
+                    html += '<input type="text" id="driveLink' + faculty.id + '_' + folder.id + '" value="' + folder.driveLink + '" onchange="updateDriveLink(' + faculty.id + ',' + folder.id + ')" placeholder="https://drive.google.com/drive/folders/..." style="width:100%;padding:10px;border:2px solid #ddd;border-radius:6px;font-size:14px;">';
                     html += '</div>';
 
-                    html += '<label class="upload-area">';
+                    html += '<label class="upload-area" onclick="document.getElementById(\'fileInput' + faculty.id + '_' + folder.id + '\').click()">';
                     html += '<div style="font-size:32px;">📤</div>';
-                    html += '<div>Click to upload PDFs</div>';
-                    html += '<input type="file" accept=".pdf" multiple style="display:none;">';
+                    html += '<div style="font-weight:600;color:#667eea;">Click to upload PDFs</div>';
+                    html += '<div style="font-size:13px;color:#999;margin-top:5px;">You can select multiple files</div>';
                     html += '</label>';
+                    html += '<input type="file" id="fileInput' + faculty.id + '_' + folder.id + '" accept=".pdf" multiple onchange="handleFileUpload(' + faculty.id + ',' + folder.id + ',this)" style="display:none;">';
 
                     if (folder.materials.length > 0) {
-                        html += '<div style="margin-top:15px;">';
-                        html += '<strong style="font-size:13px;">' + folder.materials.length + ' files</strong>';
+                        html += '<div style="margin-top:15px;padding:15px;background:white;border-radius:8px;">';
+                        html += '<strong style="font-size:14px;color:#667eea;">📚 ' + folder.materials.length + ' files uploaded</strong>';
                         folder.materials.forEach(function(file) {
-                            html += '<div class="file-item" style="margin-top:8px;">';
+                            html += '<div class="file-item" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">';
                             html += '<div class="file-info">';
                             html += '<div class="file-icon">📄</div>';
-                            html += '<div class="file-name">' + file.name + '</div>';
-                            html += '</div></div>';
+                            html += '<div><div class="file-name">' + file.name + '</div>';
+                            html += '<div class="file-size">' + formatSize(file.size) + '</div></div>';
+                            html += '</div>';
+                            html += '<button class="delete-btn" onclick="deleteFile(' + faculty.id + ',' + folder.id + ',' + file.id + ')" style="padding:4px 10px;font-size:12px;">Remove</button>';
+                            html += '</div>';
                         });
                         html += '</div>';
                     }
 
                     html += '</div>';
                 });
+
+                if (faculty.folders.length === 0) {
+                    html += '<div class="no-materials">No courses added yet. Add a course above to get started.</div>';
+                }
 
                 html += '</div></div>';
             });
@@ -621,6 +653,160 @@
             }
         }
 
+        function updateDriveLink(facultyId, folderId) {
+            var input = document.getElementById('driveLink' + facultyId + '_' + folderId);
+            if (input) {
+                for (var i = 0; i < app.faculties.length; i++) {
+                    if (app.faculties[i].id === facultyId) {
+                        for (var j = 0; j < app.faculties[i].folders.length; j++) {
+                            if (app.faculties[i].folders[j].id === folderId) {
+                                app.faculties[i].folders[j].driveLink = input.value;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        function handleFileUpload(facultyId, folderId, input) {
+            var files = input.files;
+            if (files && files.length > 0) {
+                for (var i = 0; i < app.faculties.length; i++) {
+                    if (app.faculties[i].id === facultyId) {
+                        for (var j = 0; j < app.faculties[i].folders.length; j++) {
+                            if (app.faculties[i].folders[j].id === folderId) {
+                                for (var k = 0; k < files.length; k++) {
+                                    app.faculties[i].folders[j].materials.push({
+                                        id: Date.now() + Math.random(),
+                                        name: files[k].name,
+                                        size: files[k].size,
+                                        url: URL.createObjectURL(files[k])
+                                    });
+                                }
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+                render();
+            }
+        }
+
+        function deleteFile(facultyId, folderId, fileId) {
+            if (confirm('Remove this file?')) {
+                for (var i = 0; i < app.faculties.length; i++) {
+                    if (app.faculties[i].id === facultyId) {
+                        for (var j = 0; j < app.faculties[i].folders.length; j++) {
+                            if (app.faculties[i].folders[j].id === folderId) {
+                                app.faculties[i].folders[j].materials = app.faculties[i].folders[j].materials.filter(function(m) { 
+                                    return m.id !== fileId; 
+                                });
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+                render();
+            }
+        }
+
+        function uploadFolder(facultyId, input) {
+            var files = input.files;
+            if (files && files.length > 0) {
+                var folderStructure = {};
+                
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    var pathParts = file.webkitRelativePath.split('/');
+                    var folderName = pathParts[pathParts.length - 2];
+                    
+                    if (!folderStructure[folderName]) {
+                        folderStructure[folderName] = [];
+                    }
+                    
+                    folderStructure[folderName].push({
+                        id: Date.now() + Math.random(),
+                        name: file.name,
+                        size: file.size,
+                        url: URL.createObjectURL(file)
+                    });
+                }
+                
+                for (var i = 0; i < app.faculties.length; i++) {
+                    if (app.faculties[i].id === facultyId) {
+                        for (var folderName in folderStructure) {
+                            app.faculties[i].folders.push({
+                                id: Date.now() + Math.random(),
+                                name: folderName,
+                                driveLink: '',
+                                materials: folderStructure[folderName]
+                            });
+                        }
+                        break;
+                    }
+                }
+                
+                render();
+                alert('Folder uploaded successfully!');
+            }
+        }
+
+        function uploadFiles(facultyId, input) {
+            var files = input.files;
+            if (files && files.length > 0) {
+                var folderName = prompt('Enter a name for this course:');
+                if (folderName && folderName.trim()) {
+                    var materials = [];
+                    for (var i = 0; i < files.length; i++) {
+                        materials.push({
+                            id: Date.now() + Math.random() + i,
+                            name: files[i].name,
+                            size: files[i].size,
+                            url: URL.createObjectURL(files[i])
+                        });
+                    }
+                    
+                    for (var i = 0; i < app.faculties.length; i++) {
+                        if (app.faculties[i].id === facultyId) {
+                            app.faculties[i].folders.push({
+                                id: Date.now(),
+                                name: folderName.trim(),
+                                driveLink: '',
+                                materials: materials
+                            });
+                            break;
+                        }
+                    }
+                    
+                    render();
+                    alert('Files uploaded successfully!');
+                }
+            }
+        }
+
+        function downloadAllFiles(facultyId, folderId) {
+            for (var i = 0; i < app.faculties.length; i++) {
+                if (app.faculties[i].id === facultyId) {
+                    for (var j = 0; j < app.faculties[i].folders.length; j++) {
+                        if (app.faculties[i].folders[j].id === folderId) {
+                            var materials = app.faculties[i].folders[j].materials;
+                            materials.forEach(function(file) {
+                                var link = document.createElement('a');
+                                link.href = file.url || '#';
+                                link.download = file.name;
+                                link.click();
+                            });
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
         document.getElementById('studentBtn').onclick = function() {
             app.view = 'student';
             render();
@@ -646,7 +832,7 @@
             var email = document.getElementById('email').value;
             var password = document.getElementById('password').value;
 
-            if (email === 'admin@tsap.edu' && password === 'admin123') {
+            if (email === 'admin@faculty.edu' && password === 'admin123') {
                 app.authenticated = true;
                 app.view = 'admin';
                 document.getElementById('loginModal').classList.remove('show');
