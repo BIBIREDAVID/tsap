@@ -457,6 +457,8 @@
             html += '<div class="faculty-grid">';
 
             app.faculties.forEach(function(faculty) {
+                if (faculty.folders.length === 0) return;
+                
                 html += '<div class="faculty-card">';
                 html += '<div class="faculty-header"><h2>📁 ' + faculty.name + '</h2><p>' + faculty.folders.length + ' courses available</p></div>';
                 html += '<div class="faculty-body">';
@@ -464,35 +466,18 @@
                 faculty.folders.forEach(function(folder) {
                     html += '<div class="course">';
                     html += '<h3>' + folder.name + '</h3>';
-                    html += '<div class="course-info">' + folder.materials.length + ' file(s)</div>';
-
-                    if (folder.materials.length > 0) {
-                        folder.materials.forEach(function(file) {
-                            html += '<div class="file-item">';
-                            html += '<div class="file-info">';
-                            html += '<div class="file-icon">📄</div>';
-                            html += '<div><div class="file-name">' + file.name + '</div><div class="file-size">' + formatSize(file.size) + '</div></div>';
-                            html += '</div>';
-                            html += '<a href="' + (file.url || '#') + '" download="' + file.name + '" class="download-btn">⬇️ Download</a>';
-                            html += '</div>';
-                        });
-                        html += '<button class="download-all-btn" onclick="downloadAllFiles(' + faculty.id + ',' + folder.id + ')">⬇️ Download All Files</button>';
-                    }
 
                     if (folder.driveLink) {
-                        html += '<div class="drive-link"><a href="' + folder.driveLink + '" target="_blank">🔗 Open in Google Drive</a></div>';
-                    }
-
-                    if (folder.materials.length === 0 && !folder.driveLink) {
+                        html += '<div class="drive-link" style="margin-top:15px;">';
+                        html += '<a href="' + folder.driveLink + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:15px;background:#1976d2;color:white;text-decoration:none;border-radius:8px;font-weight:600;transition:background 0.3s;">';
+                        html += '📂 Open Course Materials in Google Drive';
+                        html += '</a></div>';
+                    } else {
                         html += '<div class="no-materials">No materials available yet</div>';
                     }
 
                     html += '</div>';
                 });
-
-                if (faculty.folders.length === 0) {
-                    html += '<div class="no-materials" style="padding:40px;">No courses available yet</div>';
-                }
 
                 html += '</div></div>';
             });
@@ -522,19 +507,8 @@
                 html += '<div class="faculty-body">';
 
                 html += '<div class="add-form" style="margin-bottom:20px;">';
-                html += '<input type="text" id="newFolder' + faculty.id + '" placeholder="New course/folder name">';
+                html += '<input type="text" id="newFolder' + faculty.id + '" placeholder="Course name (e.g., Data Structures)">';
                 html += '<button class="add-btn" onclick="addFolder(' + faculty.id + ')">➕ Add Course</button>';
-                html += '</div>';
-                
-                html += '<div style="margin-bottom:20px;display:flex;gap:10px;">';
-                html += '<label style="flex:1;background:#667eea;color:white;padding:12px;border-radius:8px;text-align:center;cursor:pointer;font-weight:600;">';
-                html += '📁 Upload Folder';
-                html += '<input type="file" id="folderInput' + faculty.id + '" webkitdirectory directory multiple onchange="uploadFolder(' + faculty.id + ',this)" style="display:none;">';
-                html += '</label>';
-                html += '<label style="flex:1;background:#10b981;color:white;padding:12px;border-radius:8px;text-align:center;cursor:pointer;font-weight:600;">';
-                html += '📄 Upload Files';
-                html += '<input type="file" id="filesInput' + faculty.id + '" accept=".pdf" multiple onchange="uploadFiles(' + faculty.id + ',this)" style="display:none;">';
-                html += '</label>';
                 html += '</div>';
 
                 faculty.folders.forEach(function(folder) {
@@ -545,30 +519,24 @@
                     html += '</div>';
 
                     html += '<div style="margin:10px 0;">';
-                    html += '<label style="font-size:13px;color:#666;font-weight:600;display:block;margin-bottom:5px;">Google Drive Link:</label>';
-                    html += '<input type="text" id="driveLink' + faculty.id + '_' + folder.id + '" value="' + folder.driveLink + '" onchange="updateDriveLink(' + faculty.id + ',' + folder.id + ')" placeholder="https://drive.google.com/drive/folders/..." style="width:100%;padding:10px;border:2px solid #ddd;border-radius:6px;font-size:14px;">';
+                    html += '<label style="font-size:13px;color:#666;font-weight:600;display:block;margin-bottom:5px;">📁 Google Drive Folder Link:</label>';
+                    html += '<input type="text" id="driveLink' + faculty.id + '_' + folder.id + '" value="' + folder.driveLink + '" onchange="updateDriveLink(' + faculty.id + ',' + folder.id + ')" placeholder="Paste your Google Drive folder link here..." style="width:100%;padding:10px;border:2px solid #ddd;border-radius:6px;font-size:14px;">';
+                    html += '<div style="font-size:12px;color:#999;margin-top:5px;">💡 Tip: Share your Drive folder publicly and paste the link here. Students will access all materials from Google Drive.</div>';
                     html += '</div>';
 
-                    html += '<label class="upload-area" onclick="document.getElementById(\'fileInput' + faculty.id + '_' + folder.id + '\').click()">';
-                    html += '<div style="font-size:32px;">📤</div>';
-                    html += '<div style="font-weight:600;color:#667eea;">Click to upload PDFs</div>';
-                    html += '<div style="font-size:13px;color:#999;margin-top:5px;">You can select multiple files</div>';
-                    html += '</label>';
-                    html += '<input type="file" id="fileInput' + faculty.id + '_' + folder.id + '" accept=".pdf" multiple onchange="handleFileUpload(' + faculty.id + ',' + folder.id + ',this)" style="display:none;">';
+                    html += '<div style="background:#e3f2fd;padding:15px;border-radius:8px;margin-top:10px;border-left:4px solid #667eea;">';
+                    html += '<div style="font-weight:600;color:#1976d2;margin-bottom:8px;">📚 How to share from Google Drive:</div>';
+                    html += '<div style="font-size:13px;color:#555;line-height:1.6;">';
+                    html += '1. Upload your PDFs to a folder in Google Drive<br>';
+                    html += '2. Right-click the folder → Share<br>';
+                    html += '3. Click "Change to anyone with the link"<br>';
+                    html += '4. Copy the link and paste it above';
+                    html += '</div></div>';
 
-                    if (folder.materials.length > 0) {
-                        html += '<div style="margin-top:15px;padding:15px;background:white;border-radius:8px;">';
-                        html += '<strong style="font-size:14px;color:#667eea;">📚 ' + folder.materials.length + ' files uploaded</strong>';
-                        folder.materials.forEach(function(file) {
-                            html += '<div class="file-item" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">';
-                            html += '<div class="file-info">';
-                            html += '<div class="file-icon">📄</div>';
-                            html += '<div><div class="file-name">' + file.name + '</div>';
-                            html += '<div class="file-size">' + formatSize(file.size) + '</div></div>';
-                            html += '</div>';
-                            html += '<button class="delete-btn" onclick="deleteFile(' + faculty.id + ',' + folder.id + ',' + file.id + ')" style="padding:4px 10px;font-size:12px;">Remove</button>';
-                            html += '</div>';
-                        });
+                    if (folder.driveLink) {
+                        html += '<div style="margin-top:15px;padding:12px;background:#d4edda;border:1px solid #c3e6cb;border-radius:8px;text-align:center;">';
+                        html += '<div style="color:#155724;font-weight:600;margin-bottom:5px;">✅ Google Drive Link Active</div>';
+                        html += '<a href="' + folder.driveLink + '" target="_blank" style="color:#1976d2;text-decoration:none;font-size:14px;">🔗 Preview Link</a>';
                         html += '</div>';
                     }
 
@@ -661,147 +629,11 @@
                         for (var j = 0; j < app.faculties[i].folders.length; j++) {
                             if (app.faculties[i].folders[j].id === folderId) {
                                 app.faculties[i].folders[j].driveLink = input.value;
+                                render();
                                 break;
                             }
                         }
                         break;
-                    }
-                }
-            }
-        }
-
-        function handleFileUpload(facultyId, folderId, input) {
-            var files = input.files;
-            if (files && files.length > 0) {
-                for (var i = 0; i < app.faculties.length; i++) {
-                    if (app.faculties[i].id === facultyId) {
-                        for (var j = 0; j < app.faculties[i].folders.length; j++) {
-                            if (app.faculties[i].folders[j].id === folderId) {
-                                for (var k = 0; k < files.length; k++) {
-                                    app.faculties[i].folders[j].materials.push({
-                                        id: Date.now() + Math.random(),
-                                        name: files[k].name,
-                                        size: files[k].size,
-                                        url: URL.createObjectURL(files[k])
-                                    });
-                                }
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-                render();
-            }
-        }
-
-        function deleteFile(facultyId, folderId, fileId) {
-            if (confirm('Remove this file?')) {
-                for (var i = 0; i < app.faculties.length; i++) {
-                    if (app.faculties[i].id === facultyId) {
-                        for (var j = 0; j < app.faculties[i].folders.length; j++) {
-                            if (app.faculties[i].folders[j].id === folderId) {
-                                app.faculties[i].folders[j].materials = app.faculties[i].folders[j].materials.filter(function(m) { 
-                                    return m.id !== fileId; 
-                                });
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-                render();
-            }
-        }
-
-        function uploadFolder(facultyId, input) {
-            var files = input.files;
-            if (files && files.length > 0) {
-                var folderStructure = {};
-                
-                for (var i = 0; i < files.length; i++) {
-                    var file = files[i];
-                    var pathParts = file.webkitRelativePath.split('/');
-                    var folderName = pathParts[pathParts.length - 2];
-                    
-                    if (!folderStructure[folderName]) {
-                        folderStructure[folderName] = [];
-                    }
-                    
-                    folderStructure[folderName].push({
-                        id: Date.now() + Math.random(),
-                        name: file.name,
-                        size: file.size,
-                        url: URL.createObjectURL(file)
-                    });
-                }
-                
-                for (var i = 0; i < app.faculties.length; i++) {
-                    if (app.faculties[i].id === facultyId) {
-                        for (var folderName in folderStructure) {
-                            app.faculties[i].folders.push({
-                                id: Date.now() + Math.random(),
-                                name: folderName,
-                                driveLink: '',
-                                materials: folderStructure[folderName]
-                            });
-                        }
-                        break;
-                    }
-                }
-                
-                render();
-                alert('Folder uploaded successfully!');
-            }
-        }
-
-        function uploadFiles(facultyId, input) {
-            var files = input.files;
-            if (files && files.length > 0) {
-                var folderName = prompt('Enter a name for this course:');
-                if (folderName && folderName.trim()) {
-                    var materials = [];
-                    for (var i = 0; i < files.length; i++) {
-                        materials.push({
-                            id: Date.now() + Math.random() + i,
-                            name: files[i].name,
-                            size: files[i].size,
-                            url: URL.createObjectURL(files[i])
-                        });
-                    }
-                    
-                    for (var i = 0; i < app.faculties.length; i++) {
-                        if (app.faculties[i].id === facultyId) {
-                            app.faculties[i].folders.push({
-                                id: Date.now(),
-                                name: folderName.trim(),
-                                driveLink: '',
-                                materials: materials
-                            });
-                            break;
-                        }
-                    }
-                    
-                    render();
-                    alert('Files uploaded successfully!');
-                }
-            }
-        }
-
-        function downloadAllFiles(facultyId, folderId) {
-            for (var i = 0; i < app.faculties.length; i++) {
-                if (app.faculties[i].id === facultyId) {
-                    for (var j = 0; j < app.faculties[i].folders.length; j++) {
-                        if (app.faculties[i].folders[j].id === folderId) {
-                            var materials = app.faculties[i].folders[j].materials;
-                            materials.forEach(function(file) {
-                                var link = document.createElement('a');
-                                link.href = file.url || '#';
-                                link.download = file.name;
-                                link.click();
-                            });
-                            return;
-                        }
                     }
                 }
             }
