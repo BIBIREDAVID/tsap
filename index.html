@@ -221,6 +221,9 @@
             cursor: pointer;
             font-weight: 600;
         }
+        .add-btn:hover {
+            background: #5568d3;
+        }
         .delete-btn {
             background: #ef4444;
             color: white;
@@ -228,6 +231,9 @@
             padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
+        }
+        .delete-btn:hover {
+            background: #dc2626;
         }
         .folder-section {
             background: #f8f9fa;
@@ -356,7 +362,7 @@
             html += '<div class="container">';
             html += '<div class="admin-section"><h2>Add Faculty</h2><div class="add-form">';
             html += '<input type="text" id="newFaculty" placeholder="Faculty name">';
-            html += '<button class="add-btn" onclick="addFaculty()">➕ Add</button></div></div>';
+            html += '<button class="add-btn" onclick="window.addFaculty()">➕ Add</button></div></div>';
             
             if (!state.faculties || state.faculties.length === 0) {
                 html += '<div style="text-align:center;padding:40px;color:#999;">Loading faculties...</div>';
@@ -365,19 +371,19 @@
                 state.faculties.forEach((f, fi) => {
                     html += '<div class="faculty-card"><div class="faculty-header" style="display:flex;justify-content:space-between;align-items:center;">';
                     html += '<h2>📁 ' + f.name + '</h2>';
-                    html += '<button class="delete-btn" onclick="delFaculty(' + fi + ')">🗑️</button></div>';
+                    html += '<button class="delete-btn" onclick="window.delFaculty(' + fi + ')">🗑️</button></div>';
                     html += '<div class="faculty-body">';
                     html += '<div class="add-form" style="margin-bottom:20px;">';
                     html += '<input type="text" id="course' + fi + '" placeholder="Course name">';
-                    html += '<button class="add-btn" onclick="addCourse(' + fi + ')">➕</button></div>';
+                    html += '<button class="add-btn" onclick="window.addCourse(' + fi + ')">➕</button></div>';
                     
                     if (f.folders && f.folders.length > 0) {
                         f.folders.forEach((folder, foli) => {
                             html += '<div class="folder-section"><div style="display:flex;justify-content:space-between;margin-bottom:10px;">';
                             html += '<h4>' + folder.name + '</h4>';
-                            html += '<button class="delete-btn" onclick="delCourse(' + fi + ',' + foli + ')">🗑️</button></div>';
+                            html += '<button class="delete-btn" onclick="window.delCourse(' + fi + ',' + foli + ')">🗑️</button></div>';
                             html += '<input type="text" id="link' + fi + '_' + foli + '" value="' + (folder.driveLink || '') + '" placeholder="Google Drive link" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;margin-bottom:10px;">';
-                            html += '<button class="add-btn" style="width:100%;" onclick="saveLink(' + fi + ',' + foli + ')">💾 Save Link</button>';
+                            html += '<button class="add-btn" style="width:100%;" onclick="window.saveLink(' + fi + ',' + foli + ')">💾 Save Link</button>';
                             if (folder.driveLink) {
                                 html += '<div style="margin-top:10px;padding:10px;background:#d4edda;border-radius:8px;text-align:center;">';
                                 html += '<a href="' + folder.driveLink + '" target="_blank" style="color:#155724;text-decoration:none;">✅ Link Active - Preview</a></div>';
@@ -406,13 +412,15 @@
         window.addFaculty = async function() {
             const input = document.getElementById('newFaculty');
             if (input && input.value.trim()) {
-                state.faculties.push({ id: Date.now(), name: input.value, folders: [] });
+                const facultyName = input.value.trim();
+                state.faculties.push({ id: Date.now(), name: facultyName, folders: [] });
+                input.value = '';
                 await saveData();
             }
         };
 
         window.delFaculty = async function(i) {
-            if (confirm('Delete?')) {
+            if (confirm('Delete this faculty?')) {
                 state.faculties.splice(i, 1);
                 await saveData();
             }
@@ -420,14 +428,36 @@
 
         window.addCourse = async function(fi) {
             const input = document.getElementById('course' + fi);
-            if (input && input.value.trim()) {
-                state.faculties[fi].folders.push({ id: Date.now(), name: input.value, driveLink: '' });
-                await saveData();
+            console.log('Add course clicked for faculty index:', fi);
+            console.log('Input element:', input);
+            
+            if (input) {
+                const courseName = input.value.trim();
+                console.log('Course name:', courseName);
+                
+                if (courseName) {
+                    if (!state.faculties[fi].folders) {
+                        state.faculties[fi].folders = [];
+                    }
+                    state.faculties[fi].folders.push({ 
+                        id: Date.now(), 
+                        name: courseName, 
+                        driveLink: '' 
+                    });
+                    input.value = '';
+                    await saveData();
+                    console.log('Course added successfully');
+                } else {
+                    alert('Please enter a course name');
+                }
+            } else {
+                console.error('Input element not found');
+                alert('Error: Input field not found. Please try again.');
             }
         };
 
         window.delCourse = async function(fi, foli) {
-            if (confirm('Delete?')) {
+            if (confirm('Delete this course?')) {
                 state.faculties[fi].folders.splice(foli, 1);
                 await saveData();
             }
@@ -436,9 +466,9 @@
         window.saveLink = async function(fi, foli) {
             const input = document.getElementById('link' + fi + '_' + foli);
             if (input) {
-                state.faculties[fi].folders[foli].driveLink = input.value;
+                state.faculties[fi].folders[foli].driveLink = input.value.trim();
                 await saveData();
-                alert('✅ Saved!');
+                alert('✅ Link saved successfully!');
             }
         };
 
