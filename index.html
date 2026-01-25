@@ -108,9 +108,10 @@
             padding: 10px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 1000;
+            z-index: 10000;
             display: flex;
             gap: 10px;
+            pointer-events: auto;
         }
         .toggle-btn {
             padding: 10px 20px;
@@ -119,6 +120,12 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         .toggle-btn.active {
             background: #667eea;
@@ -127,6 +134,9 @@
         .toggle-btn.inactive {
             background: #f0f0f0;
             color: #666;
+        }
+        .toggle-btn.inactive:hover {
+            background: #e0e0e0;
         }
         .modal {
             display: none;
@@ -321,11 +331,16 @@
         }
 
         onValue(dataRef, (snapshot) => {
+            console.log('Firebase data updated');
             if (snapshot.exists()) {
-                state.faculties = snapshot.val();
+                const data = snapshot.val();
+                console.log('Data from Firebase:', JSON.stringify(data, null, 2));
+                state.faculties = data;
             } else {
+                console.log('No data exists, using default data');
                 state.faculties = defaultData;
             }
+            console.log('Current state after update:', state.faculties.length, 'faculties');
             render();
         });
 
@@ -337,12 +352,19 @@
             let html = '<div class="header"><h1>Faculty Repository</h1><p>Access all your academic materials</p></div>';
             html += '<div class="container"><div class="faculty-grid">';
             
-            state.faculties.forEach(f => {
-                if (f.folders.length > 0) {
+            console.log('Rendering student view. Total faculties:', state.faculties.length);
+            
+            let hasContent = false;
+            state.faculties.forEach((f, index) => {
+                console.log(`Faculty ${index}:`, f.name, 'Folders:', f.folders?.length || 0);
+                
+                if (f.folders && f.folders.length > 0) {
+                    hasContent = true;
                     html += '<div class="faculty-card"><div class="faculty-header"><h2>📁 ' + f.name + '</h2><p>' + f.folders.length + ' courses</p></div><div class="faculty-body">';
-                    f.folders.forEach(folder => {
+                    f.folders.forEach((folder, folderIndex) => {
+                        console.log(`  Course ${folderIndex}:`, folder.name, 'Link:', folder.driveLink || 'No link');
                         html += '<div class="course"><h3>' + folder.name + '</h3>';
-                        if (folder.driveLink) {
+                        if (folder.driveLink && folder.driveLink.trim()) {
                             html += '<div class="drive-link"><a href="' + folder.driveLink + '" target="_blank">📂 Open in Google Drive</a></div>';
                         } else {
                             html += '<div class="no-materials">No materials yet</div>';
@@ -352,6 +374,13 @@
                     html += '</div></div>';
                 }
             });
+            
+            if (!hasContent) {
+                html += '<div style="grid-column: 1/-1; text-align:center; padding:60px 20px;">';
+                html += '<h2 style="color:#999; margin-bottom:20px;">📚 No Content Yet</h2>';
+                html += '<p style="color:#666;">Admins haven\'t added any courses yet. Check back later!</p>';
+                html += '</div>';
+            }
             
             html += '</div></div>';
             return html;
@@ -403,10 +432,24 @@
         }
 
         function render() {
+            console.log('Rendering view:', state.view, 'Authenticated:', state.authenticated);
             document.getElementById('app').innerHTML = state.view === 'student' ? renderStudent() : renderAdmin();
-            document.getElementById('studentBtn').className = state.view === 'student' ? 'toggle-btn active' : 'toggle-btn inactive';
-            document.getElementById('adminBtn').className = state.view === 'admin' ? 'toggle-btn active' : 'toggle-btn inactive';
-            document.getElementById('logoutBtn').className = state.authenticated ? 'toggle-btn' : 'toggle-btn hide';
+            
+            const studentBtn = document.getElementById('studentBtn');
+            const adminBtn = document.getElementById('adminBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
+            studentBtn.className = state.view === 'student' ? 'toggle-btn active' : 'toggle-btn inactive';
+            adminBtn.className = state.view === 'admin' ? 'toggle-btn active' : 'toggle-btn inactive';
+            logoutBtn.className = state.authenticated ? 'toggle-btn' : 'toggle-btn hide';
+            
+            // Ensure buttons are not disabled
+            studentBtn.disabled = false;
+            adminBtn.disabled = false;
+            logoutBtn.disabled = false;
+            
+            console.log('Student button class:', studentBtn.className);
+            console.log('Admin button class:', adminBtn.className);
         }
 
         window.addFaculty = async function() {
@@ -465,51 +508,105 @@
 
         window.saveLink = async function(fi, foli) {
             const input = document.getElementById('link' + fi + '_' + foli);
+            console.log('Saving link for faculty index:', fi, 'folder index:', foli);
+            console.log('Input element:', input);
+            
             if (input) {
-                state.faculties[fi].folders[foli].driveLink = input.value.trim();
+                const linkValue = input.value.trim();
+                console.log('Link value:', linkValue);
+                console.log('Before save - Faculty:', state.faculties[fi].name);
+                console.log('Before save - Course:', state.faculties[fi].folders[foli].name);
+                
+                state.faculties[fi].folders[foli].driveLink = linkValue;
+                
+                console.log('After update - driveLink:', state.faculties[fi].folders[foli].driveLink);
+                
                 await saveData();
+                
+                console.log('Data saved to Firebase');
+                console.log('Current state:', JSON.stringify(state.faculties, null, 2));
+                
                 alert('✅ Link saved successfully!');
+                
+                // Force a re-render to show the updated link
+                render();
+            } else {
+                console.error('Input element not found for link' + fi + '_' + foli);
+                alert('❌ Error: Could not find the input field');
             }
         };
 
-        document.getElementById('studentBtn').addEventListener('click', () => {
-            state.view = 'student';
-            render();
-        });
-
-        document.getElementById('adminBtn').addEventListener('click', () => {
-            if (state.authenticated) {
-                state.view = 'admin';
-                render();
-            } else {
-                document.getElementById('loginModal').classList.add('show');
-            }
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            state.authenticated = false;
-            state.view = 'student';
-            render();
-        });
-
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('emailInput').value;
-            const pass = document.getElementById('passwordInput').value;
+        // Initialize database and start the app
+        async function initApp() {
+            await initDB();
             
-            if (email === 'admin@faculty.edu' && pass === 'admin123') {
-                state.authenticated = true;
-                state.view = 'admin';
-                document.getElementById('loginModal').classList.remove('show');
-                document.getElementById('errorMsg').classList.remove('show');
+            // Setup event listeners after DOM is ready
+            const studentBtn = document.getElementById('studentBtn');
+            const adminBtn = document.getElementById('adminBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const loginForm = document.getElementById('loginForm');
+            
+            console.log('Buttons found:', {
+                studentBtn: !!studentBtn,
+                adminBtn: !!adminBtn,
+                logoutBtn: !!logoutBtn
+            });
+            
+            // Event listeners for view toggle buttons
+            studentBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Student button clicked! Current view:', state.view);
+                state.view = 'student';
                 render();
-            } else {
-                document.getElementById('errorMsg').classList.add('show');
-            }
-        });
+            });
 
-        initDB();
-        render();
+            adminBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Admin button clicked, authenticated:', state.authenticated);
+                if (state.authenticated) {
+                    state.view = 'admin';
+                    render();
+                } else {
+                    document.getElementById('loginModal').classList.add('show');
+                }
+            });
+
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Logging out');
+                state.authenticated = false;
+                state.view = 'student';
+                render();
+            });
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('emailInput').value;
+                const pass = document.getElementById('passwordInput').value;
+                
+                if (email === 'admin@faculty.edu' && pass === 'admin123') {
+                    state.authenticated = true;
+                    state.view = 'admin';
+                    document.getElementById('loginModal').classList.remove('show');
+                    document.getElementById('errorMsg').classList.remove('show');
+                    render();
+                } else {
+                    document.getElementById('errorMsg').classList.add('show');
+                }
+            });
+            
+            render();
+        }
+
+        // Start the app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
     </script>
 </body>
 </html>
