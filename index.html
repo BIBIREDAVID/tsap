@@ -247,12 +247,79 @@
         .hide {
             display: none;
         }
+        .footer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 60px;
+        }
+        .footer p {
+            margin: 0;
+            font-size: 16px;
+        }
+        .footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 32px;
+            }
+            .header p {
+                font-size: 16px;
+            }
+            .faculty-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .view-toggle {
+                top: 10px;
+                right: 10px;
+                flex-direction: column;
+                gap: 5px;
+                padding: 8px;
+            }
+            .toggle-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+                width: 100%;
+            }
+            .modal-content {
+                width: 95%;
+                padding: 25px;
+            }
+            .add-form {
+                flex-direction: column;
+            }
+            .add-form input {
+                margin-bottom: 10px;
+            }
+        }
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            .header p {
+                font-size: 14px;
+            }
+            .faculty-header h2 {
+                font-size: 22px;
+            }
+            .container {
+                padding: 20px 10px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="view-toggle">
         <button class="toggle-btn active" id="studentBtn">👥 Student View</button>
-        <button class="toggle-btn inactive" id="adminBtn">⚙️ Admin Panel</button>
+        <button class="toggle-btn hide" id="adminBtn">⚙️ Admin Panel</button>
         <button class="toggle-btn hide" id="logoutBtn">🚪 Logout</button>
     </div>
 
@@ -308,7 +375,8 @@
         let state = {
             authenticated: false,
             view: 'student',
-            faculties: []
+            faculties: [],
+            showAdminButton: false
         };
 
         async function initDB() {
@@ -371,6 +439,7 @@
             }
             
             html += '</div></div>';
+            html += '<div class="footer"><p>&copy; 2025 TSAP Faculty Hub | Powered by <a href="#">BibireTech</a></p></div>';
             return html;
         }
 
@@ -416,6 +485,7 @@
                 html += '</div>';
             }
             html += '</div>';
+            html += '<div class="footer"><p>&copy; 2025 TSAP Faculty Hub | Powered by <a href="#">BibireTech</a></p></div>';
             return html;
         }
 
@@ -428,7 +498,7 @@
             const logoutBtn = document.getElementById('logoutBtn');
             
             studentBtn.className = state.view === 'student' ? 'toggle-btn active' : 'toggle-btn inactive';
-            adminBtn.className = state.view === 'admin' ? 'toggle-btn active' : 'toggle-btn inactive';
+            adminBtn.className = state.showAdminButton ? (state.view === 'admin' ? 'toggle-btn active' : 'toggle-btn inactive') : 'toggle-btn hide';
             logoutBtn.className = state.authenticated ? 'toggle-btn' : 'toggle-btn hide';
             
             // Ensure buttons are not disabled
@@ -527,6 +597,23 @@
         // Initialize database and start the app
         async function initApp() {
             await initDB();
+            
+            // Secret keyboard shortcut to reveal admin panel: Ctrl + Shift + A
+            document.addEventListener('keydown', (e) => {
+                // Check for Ctrl+Shift+A (or Cmd+Shift+A on Mac)
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+                    e.preventDefault();
+                    state.showAdminButton = !state.showAdminButton;
+                    render();
+                    if (state.showAdminButton) {
+                        alert('🔓 Admin panel revealed!');
+                        console.log('🔓 Admin panel revealed!');
+                    } else {
+                        alert('🔒 Admin panel hidden!');
+                        console.log('🔒 Admin panel hidden!');
+                    }
+                }
+            });
             
             // Setup event listeners after DOM is ready
             const studentBtn = document.getElementById('studentBtn');
