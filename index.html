@@ -96,81 +96,22 @@
             font-size: 14px;
             margin-bottom: 15px;
         }
-        .file-item {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .file-info {
-            display: flex;
-            align-items: center;
-            flex: 1;
-            min-width: 0;
-        }
-        .file-icon {
-            font-size: 24px;
-            margin-right: 12px;
-        }
-        .file-name {
-            font-weight: 500;
-            color: #333;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .file-size {
-            color: #999;
-            font-size: 13px;
-            margin-top: 2px;
-        }
         .download-btn {
             background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-left: 10px;
-        }
-        .download-btn:hover {
-            background: #5568d3;
-        }
-        .download-all-btn {
-            background: #10b981;
             color: white;
             border: none;
             padding: 12px 24px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 15px;
-            width: 100%;
-            margin-top: 10px;
             font-weight: 600;
-        }
-        .download-all-btn:hover {
-            background: #059669;
-        }
-        .drive-link {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            border-radius: 8px;
-            padding: 12px;
+            width: 100%;
             text-align: center;
-            margin-top: 10px;
-        }
-        .drive-link a {
-            color: #1976d2;
+            display: block;
             text-decoration: none;
-            font-weight: 500;
         }
-        .drive-link a:hover {
-            text-decoration: underline;
+        .download-btn:hover {
+            background: #5568d3;
         }
         .no-materials {
             text-align: center;
@@ -346,20 +287,30 @@
             margin: 0;
             color: #333;
         }
-        .upload-area {
-            border: 2px dashed #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            margin: 15px 0;
-        }
-        .upload-area:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
-        }
         .hide {
             display: none;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status-online {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-offline {
+            background: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
@@ -368,6 +319,7 @@
         <button class="toggle-btn active" id="studentBtn">👥 Student View</button>
         <button class="toggle-btn inactive" id="adminBtn">⚙️ Admin Panel</button>
         <button class="toggle-btn inactive hide" id="logoutBtn">🚪 Logout</button>
+        <span id="connectionStatus" class="status-badge status-offline">Connecting...</span>
     </div>
 
     <div class="modal" id="loginModal">
@@ -393,70 +345,116 @@
         </div>
     </div>
 
-    <div id="appContent"></div>
+    <div id="appContent"><div class="loading">⏳ Loading data from database...</div></div>
 
-    <script>
-        var app = {
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js';
+        import { getDatabase, ref, set, get, onValue, remove } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js';
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyArHZUPleCp_WpvgT2dO0R9zYo2hYzcW30",
+            authDomain: "tsapfacultyrepository.firebaseapp.com",
+            databaseURL: "https://tsapfacultyrepository-default-rtdb.firebaseio.com",
+            projectId: "tsapfacultyrepository",
+            storageBucket: "tsapfacultyrepository.firebasestorage.app",
+            messagingSenderId: "55638672405",
+            appId: "1:55638672405:web:0b4fa31787cb0171d3ba1c"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const facultiesRef = ref(database, 'faculties');
+
+        // Default faculties
+        const defaultFaculties = [
+            { id: 1, name: 'Faculty of Science', folders: [] },
+            { id: 2, name: 'Faculty of Social Science', folders: [] },
+            { id: 3, name: 'Faculty of Arts', folders: [] },
+            { id: 4, name: 'Faculty of Law', folders: [] },
+            { id: 5, name: 'Faculty of Management Science', folders: [] },
+            { id: 6, name: 'School of Transport', folders: [] },
+            { id: 7, name: 'Faculty of Communication and Media Studies', folders: [] },
+            { id: 8, name: 'School of Library, Archival and Information Science', folders: [] }
+        ];
+
+        // App state
+        window.app = {
             authenticated: false,
             view: 'student',
             searchQuery: '',
-            faculties: [
-                {
-                    id: 1,
-                    name: 'Faculty of Science',
-                    folders: []
-                },
-                {
-                    id: 2,
-                    name: 'Faculty of Social Science',
-                    folders: []
-                },
-                {
-                    id: 3,
-                    name: 'Faculty of Arts',
-                    folders: []
-                },
-                {
-                    id: 4,
-                    name: 'Faculty of Law',
-                    folders: []
-                },
-                {
-                    id: 5,
-                    name: 'Faculty of Management Science',
-                    folders: []
-                },
-                {
-                    id: 6,
-                    name: 'School of Transport',
-                    folders: []
-                },
-                {
-                    id: 7,
-                    name: 'Faculty of Communication and Media Studies',
-                    folders: []
-                },
-                {
-                    id: 8,
-                    name: 'School of Library, Archival and Information Science',
-                    folders: []
-                }
-            ]
+            faculties: [],
+            connected: false
         };
 
-        function formatSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / 1048576).toFixed(1) + ' MB';
+        // Initialize database with default data if empty
+        async function initializeDatabase() {
+            try {
+                const snapshot = await get(facultiesRef);
+                if (!snapshot.exists()) {
+                    await set(facultiesRef, defaultFaculties);
+                    console.log('Database initialized with default faculties');
+                }
+                updateConnectionStatus(true);
+            } catch (error) {
+                console.error('Error initializing database:', error);
+                updateConnectionStatus(false);
+            }
         }
 
+        // Listen for real-time updates
+        onValue(facultiesRef, (snapshot) => {
+            if (snapshot.exists()) {
+                window.app.faculties = snapshot.val();
+                updateConnectionStatus(true);
+                render();
+            } else {
+                initializeDatabase();
+            }
+        }, (error) => {
+            console.error('Database connection error:', error);
+            updateConnectionStatus(false);
+        });
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            window.app.connected = connected;
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'status-badge status-online';
+                statusEl.textContent = '● Online';
+            } else {
+                statusEl.className = 'status-badge status-offline';
+                statusEl.textContent = '● Offline';
+            }
+        }
+
+        // Save to database
+        window.saveToDatabase = async function() {
+            try {
+                await set(facultiesRef, window.app.faculties);
+                console.log('Data saved successfully');
+                return true;
+            } catch (error) {
+                console.error('Error saving data:', error);
+                alert('Error saving data: ' + error.message);
+                return false;
+            }
+        };
+
+        // Initialize
+        initializeDatabase();
+
+        // Render functions
         function renderStudentView() {
-            var html = '<div class="header"><h1>Faculty Repository</h1><p>Access all your academic materials in one place</p></div>';
+            let html = '<div class="header"><h1>Faculty Repository</h1><p>Access all your academic materials in one place</p></div>';
             html += '<div class="container">';
-            html += '<div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Search for faculties, courses, or materials..." value="' + app.searchQuery + '"></div>';
+            html += '<div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Search for faculties, courses, or materials..." value="' + window.app.searchQuery + '"></div>';
             html += '<div class="faculty-grid">';
 
-            app.faculties.forEach(function(faculty) {
+            window.app.faculties.forEach(function(faculty) {
                 if (faculty.folders.length === 0) return;
                 
                 html += '<div class="faculty-card">';
@@ -468,10 +466,7 @@
                     html += '<h3>' + folder.name + '</h3>';
 
                     if (folder.driveLink) {
-                        html += '<div class="drive-link" style="margin-top:15px;">';
-                        html += '<a href="' + folder.driveLink + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:15px;background:#1976d2;color:white;text-decoration:none;border-radius:8px;font-weight:600;transition:background 0.3s;">';
-                        html += '📂 Open Course Materials in Google Drive';
-                        html += '</a></div>';
+                        html += '<a href="' + folder.driveLink + '" target="_blank" class="download-btn">⬇️ Download Materials</a>';
                     } else {
                         html += '<div class="no-materials">No materials available yet</div>';
                     }
@@ -487,56 +482,47 @@
         }
 
         function renderAdminView() {
-            var html = '<div class="header"><h1>Admin Panel</h1><p>Manage faculty materials and resources</p></div>';
+            let html = '<div class="header"><h1>Admin Panel</h1><p>Manage faculty materials and resources</p></div>';
             html += '<div class="container">';
             html += '<div class="admin-section">';
             html += '<h2>Add New Faculty</h2>';
             html += '<div class="add-form">';
-            html += '<input type="text" id="newFacultyInput" placeholder="Faculty name (e.g., Computer Science)">';
+            html += '<input type="text" id="newFacultyInput" placeholder="Faculty name">';
             html += '<button class="add-btn" onclick="addFaculty()">➕ Add Faculty</button>';
             html += '</div></div>';
 
             html += '<div class="faculty-grid">';
-            app.faculties.forEach(function(faculty) {
+            window.app.faculties.forEach(function(faculty, fIndex) {
                 html += '<div class="faculty-card">';
                 html += '<div class="faculty-header">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
                 html += '<h2>📁 ' + faculty.name + '</h2>';
-                html += '<button class="delete-btn" onclick="deleteFaculty(' + faculty.id + ')">🗑️</button>';
+                html += '<button class="delete-btn" onclick="deleteFaculty(' + fIndex + ')">🗑️</button>';
                 html += '</div></div>';
                 html += '<div class="faculty-body">';
 
                 html += '<div class="add-form" style="margin-bottom:20px;">';
-                html += '<input type="text" id="newFolder' + faculty.id + '" placeholder="Course name (e.g., Data Structures)">';
-                html += '<button class="add-btn" onclick="addFolder(' + faculty.id + ')">➕ Add Course</button>';
+                html += '<input type="text" id="newFolder' + fIndex + '" placeholder="Course name">';
+                html += '<button class="add-btn" onclick="addFolder(' + fIndex + ')">➕ Add Course</button>';
                 html += '</div>';
 
-                faculty.folders.forEach(function(folder) {
+                faculty.folders.forEach(function(folder, folderIndex) {
                     html += '<div class="folder-section">';
                     html += '<div class="folder-header">';
                     html += '<h4>' + folder.name + '</h4>';
-                    html += '<button class="delete-btn" onclick="deleteFolder(' + faculty.id + ',' + folder.id + ')">🗑️</button>';
+                    html += '<button class="delete-btn" onclick="deleteFolder(' + fIndex + ',' + folderIndex + ')">🗑️</button>';
                     html += '</div>';
 
-                    html += '<div style="margin:10px 0;">';
-                    html += '<label style="font-size:13px;color:#666;font-weight:600;display:block;margin-bottom:5px;">📁 Google Drive Folder Link:</label>';
-                    html += '<input type="text" id="driveLink' + faculty.id + '_' + folder.id + '" value="' + folder.driveLink + '" onchange="updateDriveLink(' + faculty.id + ',' + folder.id + ')" placeholder="Paste your Google Drive folder link here..." style="width:100%;padding:10px;border:2px solid #ddd;border-radius:6px;font-size:14px;">';
-                    html += '<div style="font-size:12px;color:#999;margin-top:5px;">💡 Tip: Share your Drive folder publicly and paste the link here. Students will access all materials from Google Drive.</div>';
+                    html += '<div style="margin:15px 0;">';
+                    html += '<label style="font-size:14px;color:#333;font-weight:600;display:block;margin-bottom:8px;">📁 Google Drive Link</label>';
+                    html += '<input type="text" id="driveLink' + fIndex + '_' + folderIndex + '" value="' + (folder.driveLink || '') + '" placeholder="Paste Google Drive link..." style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;">';
+                    html += '<button onclick="updateDriveLink(' + fIndex + ',' + folderIndex + ')" class="add-btn" style="margin-top:10px;width:100%;">💾 Save Link</button>';
                     html += '</div>';
-
-                    html += '<div style="background:#e3f2fd;padding:15px;border-radius:8px;margin-top:10px;border-left:4px solid #667eea;">';
-                    html += '<div style="font-weight:600;color:#1976d2;margin-bottom:8px;">📚 How to share from Google Drive:</div>';
-                    html += '<div style="font-size:13px;color:#555;line-height:1.6;">';
-                    html += '1. Upload your PDFs to a folder in Google Drive<br>';
-                    html += '2. Right-click the folder → Share<br>';
-                    html += '3. Click "Change to anyone with the link"<br>';
-                    html += '4. Copy the link and paste it above';
-                    html += '</div></div>';
 
                     if (folder.driveLink) {
-                        html += '<div style="margin-top:15px;padding:12px;background:#d4edda;border:1px solid #c3e6cb;border-radius:8px;text-align:center;">';
-                        html += '<div style="color:#155724;font-weight:600;margin-bottom:5px;">✅ Google Drive Link Active</div>';
-                        html += '<a href="' + folder.driveLink + '" target="_blank" style="color:#1976d2;text-decoration:none;font-size:14px;">🔗 Preview Link</a>';
+                        html += '<div style="margin-top:10px;padding:12px;background:#d4edda;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">';
+                        html += '<div style="color:#155724;font-weight:600;">✅ Link Saved</div>';
+                        html += '<a href="' + folder.driveLink + '" target="_blank" style="color:#1976d2;text-decoration:none;font-weight:600;">Preview →</a>';
                         html += '</div>';
                     }
 
@@ -544,7 +530,7 @@
                 });
 
                 if (faculty.folders.length === 0) {
-                    html += '<div class="no-materials">No courses added yet. Add a course above to get started.</div>';
+                    html += '<div class="no-materials">No courses yet</div>';
                 }
 
                 html += '</div></div>';
@@ -553,120 +539,104 @@
             return html;
         }
 
-        function render() {
-            var content = app.view === 'student' ? renderStudentView() : renderAdminView();
+        window.render = function() {
+            const content = window.app.view === 'student' ? renderStudentView() : renderAdminView();
             document.getElementById('appContent').innerHTML = content;
 
-            document.getElementById('studentBtn').className = app.view === 'student' ? 'toggle-btn active' : 'toggle-btn inactive';
-            document.getElementById('adminBtn').className = app.view === 'admin' ? 'toggle-btn active' : 'toggle-btn inactive';
-            document.getElementById('logoutBtn').className = app.authenticated ? 'toggle-btn inactive' : 'toggle-btn inactive hide';
+            document.getElementById('studentBtn').className = window.app.view === 'student' ? 'toggle-btn active' : 'toggle-btn inactive';
+            document.getElementById('adminBtn').className = window.app.view === 'admin' ? 'toggle-btn active' : 'toggle-btn inactive';
+            document.getElementById('logoutBtn').className = window.app.authenticated ? 'toggle-btn inactive' : 'toggle-btn inactive hide';
 
-            if (app.view === 'student') {
-                var searchInput = document.getElementById('searchInput');
+            if (window.app.view === 'student') {
+                const searchInput = document.getElementById('searchInput');
                 if (searchInput) {
                     searchInput.oninput = function(e) {
-                        app.searchQuery = e.target.value;
+                        window.app.searchQuery = e.target.value;
                         render();
                     };
                 }
             }
-        }
+        };
 
-        function addFaculty() {
-            var input = document.getElementById('newFacultyInput');
+        // Faculty operations
+        window.addFaculty = async function() {
+            const input = document.getElementById('newFacultyInput');
             if (input && input.value.trim()) {
-                app.faculties.push({
+                window.app.faculties.push({
                     id: Date.now(),
                     name: input.value.trim(),
                     folders: []
                 });
-                render();
+                await window.saveToDatabase();
             }
-        }
+        };
 
-        function deleteFaculty(id) {
+        window.deleteFaculty = async function(index) {
             if (confirm('Delete this faculty?')) {
-                app.faculties = app.faculties.filter(function(f) { return f.id !== id; });
-                render();
+                window.app.faculties.splice(index, 1);
+                await window.saveToDatabase();
             }
-        }
+        };
 
-        function addFolder(facultyId) {
-            var input = document.getElementById('newFolder' + facultyId);
+        window.addFolder = async function(facultyIndex) {
+            const input = document.getElementById('newFolder' + facultyIndex);
             if (input && input.value.trim()) {
-                for (var i = 0; i < app.faculties.length; i++) {
-                    if (app.faculties[i].id === facultyId) {
-                        app.faculties[i].folders.push({
-                            id: Date.now(),
-                            name: input.value.trim(),
-                            driveLink: '',
-                            materials: []
-                        });
-                        break;
-                    }
-                }
-                render();
+                window.app.faculties[facultyIndex].folders.push({
+                    id: Date.now(),
+                    name: input.value.trim(),
+                    driveLink: ''
+                });
+                await window.saveToDatabase();
             }
-        }
+        };
 
-        function deleteFolder(facultyId, folderId) {
-            if (confirm('Delete this folder?')) {
-                for (var i = 0; i < app.faculties.length; i++) {
-                    if (app.faculties[i].id === facultyId) {
-                        app.faculties[i].folders = app.faculties[i].folders.filter(function(f) { return f.id !== folderId; });
-                        break;
-                    }
-                }
-                render();
+        window.deleteFolder = async function(facultyIndex, folderIndex) {
+            if (confirm('Delete this course?')) {
+                window.app.faculties[facultyIndex].folders.splice(folderIndex, 1);
+                await window.saveToDatabase();
             }
-        }
+        };
 
-        function updateDriveLink(facultyId, folderId) {
-            var input = document.getElementById('driveLink' + facultyId + '_' + folderId);
+        window.updateDriveLink = async function(facultyIndex, folderIndex) {
+            const input = document.getElementById('driveLink' + facultyIndex + '_' + folderIndex);
             if (input) {
-                for (var i = 0; i < app.faculties.length; i++) {
-                    if (app.faculties[i].id === facultyId) {
-                        for (var j = 0; j < app.faculties[i].folders.length; j++) {
-                            if (app.faculties[i].folders[j].id === folderId) {
-                                app.faculties[i].folders[j].driveLink = input.value;
-                                render();
-                                break;
-                            }
-                        }
-                        break;
-                    }
+                window.app.faculties[facultyIndex].folders[folderIndex].driveLink = input.value.trim();
+                const saved = await window.saveToDatabase();
+                if (saved) {
+                    alert('✅ Link saved successfully!');
                 }
             }
-        }
+        };
 
+        // Event listeners
         document.getElementById('studentBtn').onclick = function() {
-            app.view = 'student';
+            window.app.view = 'student';
             render();
         };
 
         document.getElementById('adminBtn').onclick = function() {
-            if (!app.authenticated) {
+            if (!window.app.authenticated) {
                 document.getElementById('loginModal').classList.add('show');
             } else {
-                app.view = 'admin';
+                window.app.view = 'admin';
                 render();
             }
         };
 
         document.getElementById('logoutBtn').onclick = function() {
-            app.authenticated = false;
-            app.view = 'student';
+            window.app.authenticated = false;
+            window.app.view = 'student';
             render();
         };
 
         document.getElementById('loginForm').onsubmit = function(e) {
             e.preventDefault();
-            var email = document.getElementById('email').value;
-            var password = document.getElementById('password').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
             if (email === 'admin@faculty.edu' && password === 'admin123') {
-                app.authenticated = true;
-                app.view = 'admin';
+                window.app.authenticated = true;
+                window.app.view = 'admin';
                 document.getElementById('loginModal').classList.remove('show');
                 document.getElementById('errorMsg').classList.remove('show');
                 render();
@@ -674,8 +644,6 @@
                 document.getElementById('errorMsg').classList.add('show');
             }
         };
-
-        render();
     </script>
 </body>
 </html>
