@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Repository System</title>
+    <title>TSAP 100L FACULTY HUB</title>
     <style>
         body {
             margin: 0;
@@ -198,13 +198,6 @@
         .error-msg.show {
             display: block;
         }
-        .demo-credentials {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-size: 14px;
-        }
         .admin-section {
             background: white;
             padding: 30px;
@@ -270,19 +263,14 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" id="emailInput" value="admin@faculty.edu">
+                    <input type="email" id="emailInput" placeholder="Enter your email">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="passwordInput" value="admin123">
+                    <input type="password" id="passwordInput" placeholder="Enter your password">
                 </div>
                 <button type="submit" class="login-btn">Login</button>
             </form>
-            <div class="demo-credentials">
-                <strong>Demo Credentials:</strong><br>
-                Email: admin@faculty.edu<br>
-                Password: admin123
-            </div>
         </div>
     </div>
 
@@ -349,7 +337,7 @@
         }
 
         function renderStudent() {
-            let html = '<div class="header"><h1>Faculty Repository</h1><p>Access all your academic materials</p></div>';
+            let html = '<div class="header"><h1>TSAP 100L FACULTY HUB</h1><p>Access all your academic materials</p></div>';
             html += '<div class="container"><div class="faculty-grid">';
             
             console.log('Rendering student view. Total faculties:', state.faculties.length);
@@ -365,7 +353,7 @@
                         console.log(`  Course ${folderIndex}:`, folder.name, 'Link:', folder.driveLink || 'No link');
                         html += '<div class="course"><h3>' + folder.name + '</h3>';
                         if (folder.driveLink && folder.driveLink.trim()) {
-                            html += '<div class="drive-link"><a href="' + folder.driveLink + '" target="_blank">📂 Open in Google Drive</a></div>';
+                            html += '<div class="drive-link"><a href="' + folder.driveLink + '" target="_blank">📥 Download from Drive</a></div>';
                         } else {
                             html += '<div class="no-materials">No materials yet</div>';
                         }
