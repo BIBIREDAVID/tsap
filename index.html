@@ -113,6 +113,9 @@
             gap: 10px;
             pointer-events: auto;
         }
+        .view-toggle.hide-all {
+            display: none;
+        }
         .toggle-btn {
             padding: 10px 20px;
             border: none;
@@ -493,13 +496,22 @@
             console.log('Rendering view:', state.view, 'Authenticated:', state.authenticated);
             document.getElementById('app').innerHTML = state.view === 'student' ? renderStudent() : renderAdmin();
             
+            const viewToggle = document.querySelector('.view-toggle');
             const studentBtn = document.getElementById('studentBtn');
             const adminBtn = document.getElementById('adminBtn');
             const logoutBtn = document.getElementById('logoutBtn');
             
-            studentBtn.className = state.view === 'student' ? 'toggle-btn active' : 'toggle-btn inactive';
+            // Hide student button when in student view, show when in admin view
+            studentBtn.className = state.view === 'student' ? 'toggle-btn hide' : 'toggle-btn inactive';
             adminBtn.className = state.showAdminButton ? (state.view === 'admin' ? 'toggle-btn active' : 'toggle-btn inactive') : 'toggle-btn hide';
             logoutBtn.className = state.authenticated ? 'toggle-btn' : 'toggle-btn hide';
+            
+            // Hide entire toggle container if all buttons are hidden
+            if (state.view === 'student' && !state.showAdminButton && !state.authenticated) {
+                viewToggle.classList.add('hide-all');
+            } else {
+                viewToggle.classList.remove('hide-all');
+            }
             
             // Ensure buttons are not disabled
             studentBtn.disabled = false;
