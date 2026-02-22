@@ -349,6 +349,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js';
         import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js';
+        import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyArHZUPleCp_WpvgT2dO0R9zYo2hYzcW30",
@@ -362,7 +363,9 @@
 
         const firebaseApp = initializeApp(firebaseConfig);
         const db = getDatabase(firebaseApp);
-        const dataRef = ref(db, 'faculties');
+        const auth = getAuth(firebaseApp);
+        // Changed to 'resources' to match your secure Firebase rules
+        const dataRef = ref(db, 'resources');
 
         const defaultData = [
             { id: 1, name: 'Faculty of Science', folders: [] },
@@ -384,8 +387,14 @@
 
         async function initDB() {
             const snapshot = await get(dataRef);
+            
             if (!snapshot.exists()) {
-                await set(dataRef, defaultData);
+                // Only try to initialize the database if you are logged in as the admin
+                if (auth.currentUser && auth.currentUser.uid === 'H3uzMPwgephk05n23KEP7CCEVOT2') {
+                    await set(dataRef, defaultData);
+                } else {
+                    console.log("Database is currently empty. Login as admin to initialize.");
+                }
             }
         }
 
@@ -608,35 +617,25 @@
 
         // Initialize database and start the app
         async function initApp() {
-            await initDB();
-            
-            // Secret keyboard shortcut to reveal admin panel: Ctrl + Shift + A
-            document.addEventListener('keydown', (e) => {
-                // Check for Ctrl+Shift+A (or Cmd+Shift+A on Mac)
-                if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-                    e.preventDefault();
-                    state.showAdminButton = !state.showAdminButton;
-                    render();
-                    if (state.showAdminButton) {
-                        alert('🔓 Admin panel revealed!');
-                        console.log('🔓 Admin panel revealed!');
-                    } else {
-                        alert('🔒 Admin panel hidden!');
-                        console.log('🔒 Admin panel hidden!');
-                    }
-                }
-            });
-            
-            // Setup event listeners after DOM is ready
+            // 1. Setup event listeners FIRST (so they work even if DB is loading/blocked)
             const studentBtn = document.getElementById('studentBtn');
             const adminBtn = document.getElementById('adminBtn');
             const logoutBtn = document.getElementById('logoutBtn');
             const loginForm = document.getElementById('loginForm');
             
-            console.log('Buttons found:', {
-                studentBtn: !!studentBtn,
-                adminBtn: !!adminBtn,
-                logoutBtn: !!logoutBtn
+            // Secret keyboard shortcut to reveal admin panel: Ctrl + Shift + L
+            document.addEventListener('keydown', (e) => {
+                // Check for Ctrl+Shift+L (or Cmd+Shift+L on Mac)
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+                    e.preventDefault();
+                    state.showAdminButton = !state.showAdminButton;
+                    render();
+                    if (state.showAdminButton) {
+                        console.log('🔓 Admin panel revealed!');
+                    } else {
+                        console.log('🔒 Admin panel hidden!');
+                    }
+                }
             });
             
             // Event listeners for view toggle buttons
@@ -660,31 +659,53 @@
                 }
             });
 
-            logoutBtn.addEventListener('click', (e) => {
+            logoutBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Logging out');
-                state.authenticated = false;
-                state.view = 'student';
-                render();
+                
+                try {
+                    await signOut(auth);
+                    state.authenticated = false;
+                    state.view = 'student';
+                    render();
+                } catch (error) {
+                    console.error("Logout failed:", error);
+                }
             });
 
-            loginForm.addEventListener('submit', (e) => {
+            loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const email = document.getElementById('emailInput').value;
                 const pass = document.getElementById('passwordInput').value;
                 
-                if (email === 'admin@faculty.edu' && pass === 'admin123') {
+                try {
+                    // Authenticate with Firebase using Email and Password
+                    await signInWithEmailAndPassword(auth, email, pass);
+                    
                     state.authenticated = true;
                     state.view = 'admin';
                     document.getElementById('loginModal').classList.remove('show');
                     document.getElementById('errorMsg').classList.remove('show');
+                    
+                    // Clear the form fields after successful login
+                    document.getElementById('emailInput').value = '';
+                    document.getElementById('passwordInput').value = '';
+                    
+                    // Call initDB again to initialize default data if it's the first login
+                    await initDB();
                     render();
-                } else {
-                    document.getElementById('errorMsg').classList.add('show');
+                    
+                } catch (error) {
+                    console.error("Login failed:", error);
+                    const errorMsg = document.getElementById('errorMsg');
+                    errorMsg.textContent = "Invalid email or password."; 
+                    errorMsg.classList.add('show');
                 }
             });
             
+            // 2. NOW initialize the database
+            await initDB();
             render();
         }
 
