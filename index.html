@@ -365,7 +365,7 @@
         const db = getDatabase(firebaseApp);
         const auth = getAuth(firebaseApp);
         // Changed to 'resources' to match your secure Firebase rules
-        const dataRef = ref(db, 'resources');
+        const dataRef = ref(db, '/');
 
         const defaultData = [
             { id: 1, name: 'Faculty of Science', folders: [] },
